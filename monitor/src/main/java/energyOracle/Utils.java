@@ -1,3 +1,5 @@
+package energyOracle;
+
 import java.util.HashMap;
 import java.time.Instant;
 

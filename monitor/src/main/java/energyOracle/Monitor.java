@@ -1,4 +1,4 @@
-package DemoMavenProject.src.main.java.energyOracle;
+package energyOracle;
 
 
 /*

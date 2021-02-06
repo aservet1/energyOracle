@@ -1,6 +1,4 @@
-make the monitor run on a timer
+
 java inlfuxDB connection and writing queries from your HashMap
 
-
-
-** make maven dependent on jRAPL.jar
+make the monitor run on a timer

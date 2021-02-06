@@ -3,4 +3,4 @@ java inlfuxDB connection and writing queries from your HashMap
 
 
 
-**set up a maven project dependent on jRAPL.jar
+** make maven dependent on jRAPL.jar

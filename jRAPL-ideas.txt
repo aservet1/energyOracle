@@ -1,2 +1,4 @@
 jrapl ideas:
 	EnergySample.getNumSockets() instead of ArchSpec.NUM_SOCKETS
+	
+make Diff.between() take abstract samples -- think about if you want to enforce strictly using this class for the difference between two raw EnergyStats stamps

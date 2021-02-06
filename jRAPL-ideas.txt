@@ -1,0 +1,2 @@
+jrapl ideas:
+	EnergySample.getNumSockets() instead of ArchSpec.NUM_SOCKETS

@@ -5,6 +5,8 @@
 
 package energyOracle;
 
+import java.io.File;
+
 //import java.util.HashMap;
 
 import java.time.Instant;
@@ -23,8 +25,8 @@ class DbSubmitter extends TimerTask { // is there anywhere that i can do monitor
 
 	// discard the first few readings since they can be unreliable
 	private static long counter = 0;
-	private static final long WARMUP_ITERATIONS = 3; // @TODO MAKE SURE YOU (definitely) SET THIS BACK TO 3 BEFORE YOU ACTUALLY START ENTERING THE DATA!!
-	private static final String DB_NAME = "testSample"; // @TODO MAKE SURE IT'S THE CORRECT NAME BY THE TIME YOU START YOUR LONG TERM ENERGY STORAGE	
+	private static final long WARMUP_ITERATIONS = 3; 
+	private static final String DB_NAME = "energyDB";
 	private SyncEnergyMonitor monitor;
 	private EnergyStats before, after;
 	InfluxDB db;
@@ -88,6 +90,11 @@ class DbSubmitter extends TimerTask { // is there anywhere that i can do monitor
 		}
 		before = after;
 		after = monitor.getSample();
+
+		File f = new File("/tmp/JavaBackgroundEnergyService-pid");
+		if(!f.exists() || f.isDirectory()) { 
+    		System.exit(0); // the linux service still runs even after you kill the pid and remove the pid file in tmp, so this is just a way to get the killing done for now. hacky hack hack :)
+		}
 	} 
 	public void initEnergyMonitor() { 
 		monitor.init();
@@ -139,7 +146,7 @@ public class Monitor
 		Monitor m = new Monitor();
 		System.out.println(Instant.now());
 		m.start();
-		// Thread.sleep(120000);
-		// m.stop();
+		Thread.sleep(120000);
+		m.stop();
 	}
 }

@@ -44,7 +44,6 @@ graph_obj_dict = {"DRAM": [],
 for key in graph_dict:
     f2 = Figure(figsize=(2.5, 1.25), dpi=100)
     f2plot = f2.add_subplot()
-    f2plot.
     graph_obj_dict[key].append(f2)
     graph_obj_dict[key].append(f2plot)
 
@@ -66,6 +65,10 @@ def animate(i, graph, path):
             yList.append(int(y))
     graph.clear()
     graph.plot(xList, yList)
+    graph.get_xaxis().set_visible(False)
+    graph.get_yaxis().set_visible(False)
+    graph.patch.set_edgecolor('black')
+    graph.patch.set_linewidth('1')
 
 
 def animate_main(i):
@@ -80,6 +83,8 @@ def animate_main(i):
             yList.append(int(y))
     plot.clear()
     plot.plot(xList, yList)
+    plot.patch.set_edgecolor('black')
+    plot.patch.set_linewidth('1')
 
 
 class EnergyOracle(tk.Tk):
@@ -88,7 +93,7 @@ class EnergyOracle(tk.Tk):
 
         s = ttk.Style()
         print(s.theme_names())
-        s.theme_use("alt")
+        s.theme_use("default")
 
         container = tk.Frame(self)
         container.pack(side="top", fill="both", expand="true")
@@ -118,7 +123,7 @@ class HomePage(tk.Frame):
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
 
-        label = ttk.Label(self, text=terms_string, font=MEDIUM_FONT)
+        label = ttk.Label(self, text=terms_string, font=LARGE_FONT)
         label.grid(row=0, column=0, columnspan=2)
 
         button_agree = ttk.Button(
@@ -158,6 +163,10 @@ class GraphPage(tk.Frame):
 
     def create_buttons(self):
 
+        self.label_display = ttk.Label(
+            self, font=LARGE_FONT, background="white")
+        self.label_display.grid(row=0, column=0, sticky="S")
+
         label_dram = ttk.Label(
             self, text="DRAM USAGE", font=LARGE_FONT, background="white")
         label_dram.grid(row=0, column=5, sticky="S")
@@ -196,28 +205,29 @@ class GraphPage(tk.Frame):
     def main_graph(self):
         # global fig
         canvas = FigureCanvasTkAgg(fig, self)
-        canvas.get_tk_widget().grid(row=1, column=0, rowspan=10,
-                                    columnspan=4, pady=10)
+        canvas.get_tk_widget().grid(row=0, column=0, rowspan=10,
+                                    columnspan=4, sticky="NS")
         canvas.draw()
 
         self.focused_graph = canvas
 
     def create_toolbar(self):
         self.toolbarFrame = tk.Frame(self.parent)
-        self.toolbarFrame.grid(row=0, column=0, columnspan=4, sticky="NW")
+        self.toolbarFrame.grid(row=5, column=0, columnspan=4, sticky="NW")
         self.toolbar = NavigationToolbar2Tk(
             self.focused_graph, self.toolbarFrame)
 
     def small_graph(self, key, row_num):
         canvas = FigureCanvasTkAgg(graph_obj_dict[key][0], self)
         canvas.get_tk_widget().grid(row=row_num * 2, column=6,
-                                    rowspan=2, columnspan=1, ipadx=10, ipady=10)
+                                    rowspan=2, columnspan=1)
         canvas.draw()
 
     def focus_target(self, key):
 
         global active
         active = graph_dict[key]
+        self.label_display.configure(text="DISPLAYING: " + key)
 
 
 application = EnergyOracle()

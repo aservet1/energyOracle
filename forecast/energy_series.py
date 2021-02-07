@@ -1,5 +1,5 @@
 import pandas as pd
-from influx_connection import InfluxDBConnection
+from forecast.influx_connection import InfluxDBConnection
 from datetime import datetime
 
 class EnergySeries:

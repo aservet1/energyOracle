@@ -11,7 +11,8 @@ from forecast.forecaster import Forecaster
 from collections import deque
 from collections import defaultdict
 from forecast.influx_connection import InfluxDBConnection
-from datetime import datetime
+from datetime import datetime, timedelta
+import pandas as pd
 
 terms_string = '''The Energy Oracle application monitors component energy use on a per-system\
 basis. Collected data feeds into a machine learning model which predicts\
@@ -36,7 +37,7 @@ style.use("ggplot")
 
 
 
-
+active_key = "TOTAL"
 graph_dict = defaultdict(deque)
 
 max_readings = 480
@@ -49,12 +50,13 @@ measurement = 'energy'
 conn = InfluxDBConnection(host, port, dbname)
 now = datetime.now()
 readings = conn.get_readings(None, None, measurement, max_readings)
+forecasts = None
 
 for readings in readings:
     for reading in readings:
         graph_dict["TIME"].append(datetime.strptime(reading["time"], "%Y-%m-%dT%H:%M:%SZ"))
         total = 0
-        for column in {"DRAM", "GPU", "PKG", "CORE"}:
+        for column in ["DRAM", "GPU", "PKG", "CORE"]:
             val = reading[column]
             total += val
             graph_dict[column].append(val)
@@ -70,19 +72,36 @@ for key in graph_dict:
         graph_obj_dict[key].append(f2)
         graph_obj_dict[key].append(f2plot)
 
-active = graph_dict["TOTAL"]
+active = graph_dict[active_key]
 
 fig = Figure(figsize=(8, 4), dpi=100)
 plot = fig.add_subplot()
+
+
 
 def get_prediction():
     print("Getting prediction")
     f = Forecaster(None, None, host, port, dbname, measurement)
     f.run()
-    
+    global forecasts
+    forecasts = f.forecasts
+    df = pd.DataFrame()
+    df["ds"] = forecasts["DRAM"]["ds"].copy()
+    columns = {"DRAM", "CPU", "CORE", "PKG"}
+    total_stuff = []
+    for a, b, c, d in zip(forecasts["DRAM"]["yhat"], forecasts["CORE"]["yhat"], forecasts["CORE"]["yhat"], forecasts["PKG"]["yhat"]):
+        total_stuff.append(a + b + c + d)
+    df["yhat"] = pd.Series(total_stuff)
+    forecasts["TOTAL"] = df
+
+        
+
+
+
+get_prediction()   
     
 
-def animate(i, graph, deq):
+def animate(i, graph, deq, domain):
     xList = graph_dict["TIME"]
     yList = deq
     graph.clear()
@@ -94,10 +113,17 @@ def animate(i, graph, deq):
 
 def animate_main(i):
     reading = [r for r in conn.get_last_reading(measurement)][0][0]
-    
-    xList = graph_dict["TIME"]
-    if reading['time'] != xList[-1]:
-        if len(xList) == max_readings:
+    now = datetime.now()
+    xListPredicted = []
+    yListPredicted = []
+    for time, prediction in zip(forecasts[active_key]["ds"], forecasts[active_key]["yhat"]):
+        if (time < now + timedelta(hours=1)) and (time > now - timedelta(hours=2)):
+            xListPredicted.append(time)
+            yListPredicted.append(prediction)
+    xListActual = graph_dict["TIME"]
+    yListActual = []
+    if reading['time'] != xListActual[-1]:
+        if len(xListActual) == max_readings:
             for column in {"DRAM", "GPU", "PKG", "CORE", "TOTAL", "TIME"}:
                 graph_dict[column].popleft()
         graph_dict["TIME"].append(datetime.strptime(reading["time"], "%Y-%m-%dT%H:%M:%SZ"))
@@ -107,9 +133,14 @@ def animate_main(i):
             total += val
             graph_dict[column].append(val)
         graph_dict["TOTAL"].append(total)
-    yList = active
+    xListActual = []
+    print(xListActual, xListPredicted, yListActual, yListPredicted)
+    for actual, time in zip(active, graph_dict["TIME"]):
+        if time > (now - timedelta(hours=2)):
+            xListActual.append(time)
+            yListActual.append(actual)
     plot.clear()
-    plot.plot(xList, yList)
+    print(xListPredicted)
     plot.patch.set_edgecolor('black')
     plot.patch.set_linewidth('1')
 
@@ -118,7 +149,7 @@ class EnergyOracle(tk.Tk):
     def __init__(self):
         tk.Tk.__init__(self)
 
-        icon = tk.PhotoImage(file="icon.png")
+        icon = tk.PhotoImage(file="gui/icon.png")
         self.iconphoto(False, icon)
 
         s = ttk.Style()
@@ -159,7 +190,7 @@ class HomePage(tk.Frame):
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
 
-        self.background_image = tk.PhotoImage(file="BG_name.png")
+        self.background_image = tk.PhotoImage(file="gui/BG_name.png")
         background_label = tk.Label(self, image=self.background_image)
         background_label.place(x=0, y=0, relwidth=1, relheight=1)
 
@@ -191,7 +222,7 @@ class Splash(tk.Frame):
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
 
-        self.background_image = tk.PhotoImage(file="BG_name.png")
+        self.background_image = tk.PhotoImage(file="gui/BG_name.png")
         background_label = tk.Label(self, image=self.background_image)
         background_label.place(x=0, y=0, relwidth=1, relheight=1)
 
@@ -222,7 +253,7 @@ class GraphPage(tk.Frame):
                 self.small_graph(key, i)
                 i += 1
 
-        self.focus_target("TOTAL")
+        self.focus_target("DRAM")
 
     # def clear_test(self):
     #     self.focused_graph
@@ -303,26 +334,29 @@ class GraphPage(tk.Frame):
                                     rowspan=2, columnspan=1, sticky="NS")
         canvas.draw()
 
+
     def focus_target(self, key):
 
-        global activey
+        global active, active_key
+        active_key = key
         active = graph_dict[key]
         self.label_display.configure(text="DISPLAYING: " + key)
 
 
 application = EnergyOracle()
+interval = 2000
 application.geometry("1280x720")
-animation1 = animation.FuncAnimation(fig, animate_main, interval=2000)
+animation1 = animation.FuncAnimation(fig, animate_main, interval=interval)
 animation2 = animation.FuncAnimation(
-    graph_obj_dict["DRAM"][0], animate, interval=500, fargs=[graph_obj_dict["DRAM"][1], graph_dict["DRAM"]])
+    graph_obj_dict["DRAM"][0], animate, interval=interval, fargs=[graph_obj_dict["DRAM"][1], graph_dict["DRAM"], 'DRAM'])
 animation3 = animation.FuncAnimation(
-    graph_obj_dict["CORE"][0], animate, interval=500, fargs=[graph_obj_dict["CORE"][1], graph_dict["CORE"]])
+    graph_obj_dict["CORE"][0], animate, interval=interval, fargs=[graph_obj_dict["CORE"][1], graph_dict["CORE"], 'CORE'])
 animation4 = animation.FuncAnimation(
-    graph_obj_dict["PKG"][0], animate, interval=500, fargs=[graph_obj_dict["PKG"][1], graph_dict["PKG"]])
+    graph_obj_dict["PKG"][0], animate, interval=interval, fargs=[graph_obj_dict["PKG"][1], graph_dict["PKG"], "PKG"])
 animation5 = animation.FuncAnimation(
-    graph_obj_dict["GPU"][0], animate, interval=500, fargs=[graph_obj_dict["GPU"][1], graph_dict["GPU"]])
+    graph_obj_dict["GPU"][0], animate, interval=interval, fargs=[graph_obj_dict["GPU"][1], graph_dict["GPU"], "GPU"])
 animation6 = animation.FuncAnimation(
-    graph_obj_dict["TOTAL"][0], animate, interval=500, fargs=[graph_obj_dict["TOTAL"][1], graph_dict["TOTAL"]])
+    graph_obj_dict["TOTAL"][0], animate, interval=interval, fargs=[graph_obj_dict["TOTAL"][1], graph_dict["TOTAL"], "TOTAL"])
 
 application.mainloop()
 conn.close()

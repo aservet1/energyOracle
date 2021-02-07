@@ -1,4 +1,4 @@
-from energy_series import EnergySeries
+from forecast.energy_series import EnergySeries
 import matplotlib.pyplot as plt
 import pandas as pd
 from fbprophet import Prophet

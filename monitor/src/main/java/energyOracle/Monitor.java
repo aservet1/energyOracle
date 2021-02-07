@@ -143,7 +143,7 @@ public class Monitor
 		Monitor m = new Monitor();
 		System.out.println(Instant.now());
 		m.start();
-		Thread.sleep(120000);
-		m.stop();
+		// Thread.sleep(120000);
+		// m.stop();
 	}
 }

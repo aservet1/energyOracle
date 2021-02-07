@@ -1,5 +1,6 @@
 /*
-	credit due to: https://www.baeldung.com/java-timer-and-timertask
+	credit to:	https://www.baeldung.com/java-timer-and-timertask
+				https://www.baeldung.com/java-influxdb
 */
 
 package energyOracle;
@@ -15,13 +16,11 @@ class DbSubmitter extends TimerTask { // is there anywhere that i can do monitor
 	// discard the first few readings since they can be unreliable
 	private static long counter = 0;
 	private static final long WARMUP_ITERATIONS = 3; // @TODO MAKE SURE YOU (maybe) SET THIS BACK TO 5 BEFORE YOU ACTUALLY START ENTERING THE DATA!!
-
 	private SyncEnergyMonitor monitor;
 	private EnergyStats before, after;
 	public DbSubmitter() {
 		super();
 		monitor = new SyncEnergyMonitor();
-		monitor.init();
 		after = monitor.getSample();
 		before = after;
 	}
@@ -38,6 +37,8 @@ class DbSubmitter extends TimerTask { // is there anywhere that i can do monitor
 		after = monitor.getSample();
 		// if (cancel == true) cancel();
 	}
+	public void initEnergyMonitor() { monitor.init(); }
+	public void deallocEnergyMonitor() { monitor.dealloc(); }
 }
 
 public class Monitor
@@ -59,13 +60,15 @@ public class Monitor
 	}
 
 	public void start() {
+		scheduledTask.initEnergyMonitor();
 		getOnProperInterval(samplingRate);
-		long period = samplingRate;// 1000L * 60L * 60L * 24L;
+		long period = samplingRate;
 		timer.scheduleAtFixedRate(scheduledTask, 0, period);
 	}
 
 	public void stop() {
 		timer.cancel();
+		scheduledTask.deallocEnergyMonitor();
 	}
 
 	public static void main(String[] args) throws InterruptedException
@@ -73,7 +76,7 @@ public class Monitor
 		Monitor m = new Monitor();
 		System.out.println(Instant.now());
 		m.start();
-		// Thread.sleep(5000);
-		// m.stop();
+		Thread.sleep(20000);
+		m.stop();
 	}
 }

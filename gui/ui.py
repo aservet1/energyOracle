@@ -1,3 +1,4 @@
+import os
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 from matplotlib.figure import Figure
 import matplotlib.animation as animation
@@ -251,6 +252,7 @@ class GraphPage(tk.Frame):
     def start_service(self):
         self.button_start.configure(state="disabled")
         self.button_stop.configure(state="enabled")
+        os.system("cd /home/alejandro/hackbu2021/energyOracle/monitor && ./run.sh")
 
     def stop_service(self):
         self.button_start.configure(state="enabled")

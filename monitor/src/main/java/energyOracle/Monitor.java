@@ -1,6 +1,5 @@
 /*
 	credit due to: https://www.baeldung.com/java-timer-and-timertask
-
 */
 
 package energyOracle;
@@ -17,6 +16,8 @@ class DbSubmitter extends TimerTask { // is there anywhere that i can do monitor
 	private static long counter = 0;
 	private static final long WARMUP_ITERATIONS = 5;
 
+	// public boolean cancel = false;
+
 	private SyncEnergyMonitor monitor;
 	private EnergyStats before, after;
 	public DbSubmitter() {
@@ -32,6 +33,7 @@ class DbSubmitter extends TimerTask { // is there anywhere that i can do monitor
 		else System.out.println("warmup iteration "+counter+"/"+WARMUP_ITERATIONS+" completed");
 		before = after;
 		after = monitor.getSample();
+		// if (cancel == true) cancel();
 	}
 }
 
@@ -39,10 +41,12 @@ public class Monitor
 {
 	private long samplingRate;
 	DbSubmitter scheduledTask;
+	Timer timer;
 
 	public Monitor() {
 		samplingRate = 15000L; // default every 15 seconds
 		scheduledTask = new DbSubmitter();
+		timer = new Timer("Timer");
 	}
 
 	private static void getOnProperInterval(int s) { // catch up to the next 15th second
@@ -50,22 +54,21 @@ public class Monitor
 		System.out.println(Instant.now());
 	}
 
-	public void startMonitoring() {
-
-		Timer timer = new Timer("Timer");
-
+	public void start() {
 		getOnProperInterval(15);
 		long period = samplingRate;// 1000L * 60L * 60L * 24L;
 		timer.scheduleAtFixedRate(scheduledTask, 0, period);
 	}
 
-	public void abortMonitoring() {
-
+	public void stop() {
+		timer.cancel();
 	}
 
 	public static void main(String[] args) throws InterruptedException
 	{
 		Monitor m = new Monitor();
-		m.startMonitoring();
+		m.start();
+		Thread.sleep(5000);
+		m.stop();
 	}
 }

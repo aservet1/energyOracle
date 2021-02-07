@@ -26,9 +26,6 @@ public class DBTest {
         influxDB.enableBatch(100, 200, TimeUnit.MILLISECONDS);
         influxDB.setRetentionPolicy("defaultPolicy");
         influxDB.setDatabase(dbName);
-        // 
-
-
 
         Point point = Point.measurement("memory")
             .time(Instant.now().getEpochSecond(), TimeUnit.SECONDS)

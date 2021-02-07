@@ -1,2 +1,2 @@
 
-java inlfuxDB connection and writing queries from your HashMap
+java inlfuxDB writing queries from your HashMap right out of subroutine call in the run() method

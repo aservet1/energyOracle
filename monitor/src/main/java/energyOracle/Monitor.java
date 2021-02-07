@@ -14,9 +14,7 @@ class DbSubmitter extends TimerTask { // is there anywhere that i can do monitor
 
 	// discard the first few readings since they can be unreliable
 	private static long counter = 0;
-	private static final long WARMUP_ITERATIONS = 5;
-
-	// public boolean cancel = false;
+	private static final long WARMUP_ITERATIONS = 3; // @TODO MAKE SURE YOU (maybe) SET THIS BACK TO 5 BEFORE YOU ACTUALLY START ENTERING THE DATA!!
 
 	private SyncEnergyMonitor monitor;
 	private EnergyStats before, after;
@@ -27,9 +25,14 @@ class DbSubmitter extends TimerTask { // is there anywhere that i can do monitor
 		after = monitor.getSample();
 		before = after;
 	}
+	private static void submitToDB(EnergySample es) {
+		System.out.println(Utils.toHashMap(es));
+	}
 	@Override
 	public void run() {
-		if (counter++ >= WARMUP_ITERATIONS) System.out.println(Utils.toHashMap(EnergyDiff.between(before, after)));
+		if (counter++ >= WARMUP_ITERATIONS) {
+			submitToDB(EnergyDiff.between(before, after));
+		}
 		else System.out.println("warmup iteration "+counter+"/"+WARMUP_ITERATIONS+" completed");
 		before = after;
 		after = monitor.getSample();
@@ -49,13 +52,14 @@ public class Monitor
 		timer = new Timer("Timer");
 	}
 
-	private static void getOnProperInterval(int s) { // catch up to the next 15th second
-		while (Instant.now().getEpochSecond() % s != 0);
+	private static void getOnProperInterval(long ms) { // catch up to the next 15th second
+		long sec = ms / 1000;
+		while (Instant.now().getEpochSecond() % sec != 0);
 		System.out.println(Instant.now());
 	}
 
 	public void start() {
-		getOnProperInterval(15);
+		getOnProperInterval(samplingRate);
 		long period = samplingRate;// 1000L * 60L * 60L * 24L;
 		timer.scheduleAtFixedRate(scheduledTask, 0, period);
 	}
@@ -67,8 +71,9 @@ public class Monitor
 	public static void main(String[] args) throws InterruptedException
 	{
 		Monitor m = new Monitor();
+		System.out.println(Instant.now());
 		m.start();
-		Thread.sleep(5000);
-		m.stop();
+		// Thread.sleep(5000);
+		// m.stop();
 	}
 }

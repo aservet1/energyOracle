@@ -1,4 +1,2 @@
 
 java inlfuxDB connection and writing queries from your HashMap
-
-make the monitor run on a timer

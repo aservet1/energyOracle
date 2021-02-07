@@ -186,6 +186,8 @@ class GraphPage(tk.Frame):
 
         self.parent = parent
 
+        self.configure(background="white")
+
         self.main_graph()
         self.create_buttons()
 

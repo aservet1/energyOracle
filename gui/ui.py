@@ -140,7 +140,7 @@ class HomePage(tk.Frame):
 
         tc_label = ttk.Label(self, text=terms_string,
                              font=LARGE_FONT, borderwidth=4, padding=5, relief='solid', wraplength=615)
-        tc_label.pack(pady=(125, 0), ipadx=10, ipady=10)
+        tc_label.pack(ipadx=10, ipady=10)
 
         button_agree = ttk.Button(
             self, text="Agree", command=lambda: load_graph_page())

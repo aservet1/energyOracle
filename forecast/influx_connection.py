@@ -33,6 +33,7 @@ class InfluxDBConnection:
         query.append(" ORDER BY time")
         if limit is not None:
             query.append(f" LIMIT {limit}")
+        print(params)
         return self.client.query("".join(query), bind_params=params)
 
     def insert_from_file(self, fname, measurement):

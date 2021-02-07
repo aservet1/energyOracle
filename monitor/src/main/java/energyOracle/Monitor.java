@@ -91,10 +91,7 @@ class DbSubmitter extends TimerTask { // is there anywhere that i can do monitor
 		before = after;
 		after = monitor.getSample();
 
-		File f = new File("/tmp/JavaBackgroundEnergyService-pid");
-		if(!f.exists() || f.isDirectory()) { 
-    		System.exit(0); // the linux service still runs even after you kill the pid and remove the pid file in tmp, so this is just a way to get the killing done for now. hacky hack hack :)
-		}
+		
 	} 
 	public void initEnergyMonitor() { 
 		monitor.init();

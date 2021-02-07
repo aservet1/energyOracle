@@ -6,6 +6,7 @@ from tkinter import ttk
 import tkinter as tk
 import matplotlib
 matplotlib.use("TKAgg")
+from forecast.forecaster import Forecaster
 from collections import deque
 from collections import defaultdict
 from forecast.influx_connection import InfluxDBConnection
@@ -39,9 +40,14 @@ graph_dict = defaultdict(deque)
 
 max_readings = 480
 
-conn = InfluxDBConnection("localhost", 8086, "Energy_Database")
+host = 'localhost'
+port = 8086
+dbname = 'energyDB'
+measurement = 'energy'
+
+conn = InfluxDBConnection(host, port, dbname)
 now = datetime.now()
-readings = conn.get_readings(datetime.fromtimestamp(int(now.timestamp()) - 3600*24), now, "energy_readings", 240)
+readings = conn.get_readings(None, None, measurement, max_readings)
 
 for readings in readings:
     for reading in readings:
@@ -68,20 +74,25 @@ active = graph_dict["TOTAL"]
 fig = Figure(figsize=(8, 4), dpi=100)
 plot = fig.add_subplot()
 
+def get_prediction():
+    print("Getting prediction")
+    f = Forecaster(None, None, host, port, dbname, measurement)
+    f.run()
+    
+    
+
 def animate(i, graph, deq):
-    print(reading)
     xList = graph_dict["TIME"]
     yList = deq
     graph.clear()
     graph.plot(xList, yList)
     graph.get_xaxis().set_visible(False)
-    graph.get_yaxis().set_visible(False)
     graph.patch.set_edgecolor('black')
     graph.patch.set_linewidth('1')
 
 
 def animate_main(i):
-    reading = [r for r in conn.get_last_reading('energy_readings')][0][0]
+    reading = [r for r in conn.get_last_reading(measurement)][0][0]
     
     xList = graph_dict["TIME"]
     if reading['time'] != xList[-1]:
@@ -107,7 +118,6 @@ class EnergyOracle(tk.Tk):
         tk.Tk.__init__(self)
 
         s = ttk.Style()
-        print(s.theme_names())
         s.theme_use("default")
 
         container = tk.Frame(self)
@@ -255,24 +265,24 @@ class GraphPage(tk.Frame):
 
     def focus_target(self, key):
 
-        global active
+        global activey
         active = graph_dict[key]
         self.label_display.configure(text="DISPLAYING: " + key)
 
 
 application = EnergyOracle()
 application.geometry("1280x720")
-animation1 = animation.FuncAnimation(fig, animate_main, interval=15000)
+animation1 = animation.FuncAnimation(fig, animate_main, interval=2000)
 animation2 = animation.FuncAnimation(
-    graph_obj_dict["DRAM"][0], animate, interval=15000, fargs=[graph_obj_dict["DRAM"][1], graph_dict["DRAM"]])
+    graph_obj_dict["DRAM"][0], animate, interval=500, fargs=[graph_obj_dict["DRAM"][1], graph_dict["DRAM"]])
 animation3 = animation.FuncAnimation(
-    graph_obj_dict["CORE"][0], animate, interval=15000, fargs=[graph_obj_dict["CORE"][1], graph_dict["CORE"]])
+    graph_obj_dict["CORE"][0], animate, interval=500, fargs=[graph_obj_dict["CORE"][1], graph_dict["CORE"]])
 animation4 = animation.FuncAnimation(
-    graph_obj_dict["PKG"][0], animate, interval=15000, fargs=[graph_obj_dict["PKG"][1], graph_dict["PKG"]])
+    graph_obj_dict["PKG"][0], animate, interval=500, fargs=[graph_obj_dict["PKG"][1], graph_dict["PKG"]])
 animation5 = animation.FuncAnimation(
-    graph_obj_dict["GPU"][0], animate, interval=15000, fargs=[graph_obj_dict["GPU"][1], graph_dict["GPU"]])
+    graph_obj_dict["GPU"][0], animate, interval=500, fargs=[graph_obj_dict["GPU"][1], graph_dict["GPU"]])
 animation6 = animation.FuncAnimation(
-    graph_obj_dict["TOTAL"][0], animate, interval=15000, fargs=[graph_obj_dict["TOTAL"][1], graph_dict["TOTAL"]])
+    graph_obj_dict["TOTAL"][0], animate, interval=500, fargs=[graph_obj_dict["TOTAL"][1], graph_dict["TOTAL"]])
 
 application.mainloop()
 conn.close()

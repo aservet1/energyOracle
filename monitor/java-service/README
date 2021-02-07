@@ -1,0 +1,5 @@
+setting up a systemctl service to run the energy collecting in the background always
+
+credit goes to this tutorial, took code from it to use in here:
+
+https://medium.com/@ameyadhamnaskar/running-java-application-as-a-service-on-centos-599609d0c641

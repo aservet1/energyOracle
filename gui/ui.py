@@ -5,23 +5,24 @@ from matplotlib import style
 from tkinter import ttk
 import tkinter as tk
 import matplotlib
+import pyperclip
 matplotlib.use("TKAgg")
 
 
 # Tkinter window switching concept from https://www.youtube.com/watch?v=jBUpjijYtCk&list=PLQVvvaa0QuDclKx-QpC9wntnURXVJqLyk&index=4
 
-terms_string = "The Energy Oracle application monitors component energy use on a per-system\n\
-                basis. Collected data feeds into a machine learning model which predicts\n\
-                future energy usage. The Oracle is intended for use as both a commercial\n\
-                and consumer product. A user could anticipate lulls in computational\n\
-                overhead, and reduce power draw accordingly. This would both lower costs\n\
-                and lower excess energy consumption.\n\n\
-                To accomplish this, The Energy Oracle requires read/write access to the\n\
-                interface of the model-specific-registers. Root privileges are needed\n\
-                for this task, explaining the password prompt.\n\n\
-                The entire Energy Oracle project is open source and available for\n\
-                inspection to ensure full transparency. Your password is never saved by us.\n\
-                (https://github.com/aservet1/energyOracle)"
+terms_string = '''The Energy Oracle application monitors component energy use on a per-system\
+basis. Collected data feeds into a machine learning model which predicts\
+future energy usage. The Oracle is intended for use as both a commercial\
+and consumer product. A user could anticipate lulls in computational\
+overhead, and reduce power draw accordingly. This would both lower costs\
+and lower excess energy consumption.\n\n
+To accomplish this, The Energy Oracle requires read/write access to the\
+interface of the model-specific-registers. Root privileges are needed\
+for this task, explaining the password prompt.\n\n
+The entire Energy Oracle project is open source and available for\
+inspection to ensure full transparency. Your password is never saved by us.\n\n
+(https://github.com/aservet1/energyOracle)'''
 
 LARGE_FONT = ("Helvetica", 20)
 MEDIUM_FONT = ("Helvetica", 10)
@@ -91,8 +92,10 @@ class EnergyOracle(tk.Tk):
     def __init__(self):
         tk.Tk.__init__(self)
 
+        icon = tk.PhotoImage(file="icon.png")
+        self.iconphoto(False, icon)
+
         s = ttk.Style()
-        print(s.theme_names())
         s.theme_use("default")
 
         container = tk.Frame(self)
@@ -100,15 +103,22 @@ class EnergyOracle(tk.Tk):
         container.grid_rowconfigure(0, weight=5)
         container.grid_columnconfigure(0, weight=5)
 
+        menubar = tk.Menu(container)
+        filemenu = tk.Menu(menubar, tearoff=0)
+        filemenu.add_command(label="Quit", command=lambda: self.quit())
+        menubar.add_cascade(label="File", menu=filemenu)
+
+        tk.Tk.config(self, menu=menubar)
+
         self.frame_dict = {}
 
-        for F in (HomePage, GraphPage):
+        for F in (HomePage, GraphPage, Splash):
 
             frame = F(container, self)
             self.frame_dict[F] = frame
             frame.grid(row=0, column=0, sticky="nsew")
 
-        self.show_frame(HomePage)
+        self.show_frame(Splash)
 
     def show_frame(self, container):
         frame = self.frame_dict[container]
@@ -123,20 +133,49 @@ class HomePage(tk.Frame):
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
 
-        label = ttk.Label(self, text=terms_string, font=LARGE_FONT)
-        label.grid(row=0, column=0, columnspan=2)
+        self.background_image = tk.PhotoImage(file="BG_name.png")
+        background_label = tk.Label(self, image=self.background_image)
+        background_label.place(x=0, y=0, relwidth=1, relheight=1)
+
+        tc_label = ttk.Label(self, text=terms_string,
+                             font=LARGE_FONT, borderwidth=4, padding=5, relief='solid', wraplength=615)
+        tc_label.pack(pady=(125, 0), ipadx=10, ipady=10)
 
         button_agree = ttk.Button(
             self, text="Agree", command=lambda: load_graph_page())
-        button_agree.grid(row=1, column=1, sticky="W")
+        button_agree.place(x=875, y=600)
 
         button_disagree = ttk.Button(
             self, text="Disagree", command=lambda: controller.quit())
-        button_disagree.grid(row=1, column=0, sticky="E")
+        button_disagree.place(x=875, y=625)
+
+        button_git = ttk.Button(self, text="Copy URL",
+                                command=lambda: copy_url())
+        button_git.place(x=875, y=650)
+
+        def copy_url():
+            pyperclip.copy("https://github.com/aservet1/energyOracle")
 
         def load_graph_page():
             controller.show_frame(GraphPage)
             controller.frame_dict[GraphPage].create_toolbar()
+
+
+class Splash(tk.Frame):
+    def __init__(self, parent, controller):
+        tk.Frame.__init__(self, parent)
+
+        self.background_image = tk.PhotoImage(file="BG_name.png")
+        background_label = tk.Label(self, image=self.background_image)
+        background_label.place(x=0, y=0, relwidth=1, relheight=1)
+
+        button_start = ttk.Button(
+            self, text="Start", command=lambda: controller.show_frame(HomePage))
+        button_start.place(x=875, y=600)
+
+        button_start = ttk.Button(
+            self, text="Quit", command=lambda: controller.quit())
+        button_start.place(x=875, y=625)
 
 
 class GraphPage(tk.Frame):

@@ -12,11 +12,12 @@ class InfluxDBConnection:
         if not found:
             self.client.create_database(db)
         self.client.switch_database(db)
+
     def get_last_reading(self, measurement):
-        params = {"measurement": measurement}
-        result = self.client.query('SELECT * FROM $measurement ORDER BY time DESC LIMIT 1', bind_params=params)
+        result = self.client.query(f'SELECT * FROM {measurement} ORDER BY time DESC LIMIT 1')
         return result
-    def get_readings(self, start, stop, measurement):
+
+    def get_readings(self, start, stop, measurement, limit=None):
         params = {"measurement": measurement}
         query = ["SELECT * FROM ", measurement]
         if start:
@@ -29,8 +30,11 @@ class InfluxDBConnection:
             else:
                 query.append(" where ")
             query.append("time <= $stop")
-        print(params)
+        query.append(" ORDER BY time")
+        if limit is not None:
+            query.append(f" LIMIT {limit}")
         return self.client.query("".join(query), bind_params=params)
+
     def insert_from_file(self, fname, measurement):
         keys = [("DRAM",1), ("GPU", 2), ("PKG", 4), ("CORE", 3)]
         points = []
@@ -49,6 +53,7 @@ class InfluxDBConnection:
                 data_dict["measurement"] = measurement
                 points.append(data_dict)
         self.client.write_points(points)
+
     def write_df_to_db(self, df, measurement):
         data = {}
         

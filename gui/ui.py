@@ -6,9 +6,10 @@ from tkinter import ttk
 import tkinter as tk
 import matplotlib
 matplotlib.use("TKAgg")
-
-
-# Tkinter window switching concept from https://www.youtube.com/watch?v=jBUpjijYtCk&list=PLQVvvaa0QuDclKx-QpC9wntnURXVJqLyk&index=4
+from collections import deque
+from collections import defaultdict
+from forecast.influx_connection import InfluxDBConnection
+from datetime import datetime
 
 terms_string = "The Energy Oracle application monitors component energy use on a per-system\n\
                 basis. Collected data feeds into a machine learning model which predicts\n\
@@ -29,40 +30,48 @@ SMALL_FONT = ("Helvetica", 8)
 
 style.use("ggplot")
 
-graph_dict = {"DRAM": "dram.txt",
-              "CORE": "core.txt",
-              "PACKAGE": "package.txt",
-              "GPU": "gpu.txt",
-              "TOTAL": "sample.txt"}
 
-graph_obj_dict = {"DRAM": [],
-                  "CORE": [],
-                  "PACKAGE": [],
-                  "GPU": [],
-                  "TOTAL": []}
+
+
+
+
+graph_dict = defaultdict(deque)
+
+max_readings = 480
+
+conn = InfluxDBConnection("localhost", 8086, "Energy_Database")
+now = datetime.now()
+readings = conn.get_readings(datetime.fromtimestamp(int(now.timestamp()) - 3600*24), now, "energy_readings", 240)
+
+for readings in readings:
+    for reading in readings:
+        graph_dict["TIME"].append(datetime.strptime(reading["time"], "%Y-%m-%dT%H:%M:%SZ"))
+        total = 0
+        for column in {"DRAM", "GPU", "PKG", "CORE"}:
+            val = reading[column]
+            total += val
+            graph_dict[column].append(val)
+        graph_dict["TOTAL"].append(total)
+        
+
+graph_obj_dict = defaultdict(list)
 
 for key in graph_dict:
-    f2 = Figure(figsize=(2.5, 1.25), dpi=100)
-    f2plot = f2.add_subplot()
-    graph_obj_dict[key].append(f2)
-    graph_obj_dict[key].append(f2plot)
+    if key != "TIME":
+        f2 = Figure(figsize=(2.5, 1.25), dpi=100)
+        f2plot = f2.add_subplot()
+        graph_obj_dict[key].append(f2)
+        graph_obj_dict[key].append(f2plot)
 
 active = graph_dict["TOTAL"]
 
 fig = Figure(figsize=(8, 4), dpi=100)
 plot = fig.add_subplot()
 
-
-def animate(i, graph, path):
-    data = open(path, "r").read()
-    dataList = data.split('\n')
-    xList = []
-    yList = []
-    for each in dataList:
-        if len(each) > 1:
-            x, y = each.split(',')
-            xList.append(int(x))
-            yList.append(int(y))
+def animate(i, graph, deq):
+    print(reading)
+    xList = graph_dict["TIME"]
+    yList = deq
     graph.clear()
     graph.plot(xList, yList)
     graph.get_xaxis().set_visible(False)
@@ -72,15 +81,21 @@ def animate(i, graph, path):
 
 
 def animate_main(i):
-    data = open(active, "r").read()
-    dataList = data.split('\n')
-    xList = []
-    yList = []
-    for each in dataList:
-        if len(each) > 1:
-            x, y = each.split(',')
-            xList.append(int(x))
-            yList.append(int(y))
+    reading = [r for r in conn.get_last_reading('energy_readings')][0][0]
+    
+    xList = graph_dict["TIME"]
+    if reading['time'] != xList[-1]:
+        if len(xList) == max_readings:
+            for column in {"DRAM", "GPU", "PKG", "CORE", "TOTAL", "TIME"}:
+                graph_dict[column].popleft()
+        graph_dict["TIME"].append(datetime.strptime(reading["time"], "%Y-%m-%dT%H:%M:%SZ"))
+        total = 0
+        for column in {"DRAM", "GPU", "PKG", "CORE"}:
+            val = reading[column]
+            total += val
+            graph_dict[column].append(val)
+        graph_dict["TOTAL"].append(total)
+    yList = active
     plot.clear()
     plot.plot(xList, yList)
     plot.patch.set_edgecolor('black')
@@ -153,8 +168,9 @@ class GraphPage(tk.Frame):
 
         i = 0
         for key in graph_dict:
-            self.small_graph(key, i)
-            i += 1
+            if key != "TIME":
+                self.small_graph(key, i)
+                i += 1
 
         self.focus_target("TOTAL")
 
@@ -162,7 +178,6 @@ class GraphPage(tk.Frame):
     #     self.focused_graph
 
     def create_buttons(self):
-
         self.label_display = ttk.Label(
             self, font=LARGE_FONT, background="white")
         self.label_display.grid(row=0, column=0, sticky="S")
@@ -189,10 +204,10 @@ class GraphPage(tk.Frame):
         button_core.grid(row=3, column=5, sticky="N")
 
         label_package = ttk.Label(
-            self,  text="PACKAGE USAGE", font=LARGE_FONT, background="white")
+            self,  text="PKG USAGE", font=LARGE_FONT, background="white")
         label_package.grid(row=4, column=5, sticky="S")
         button_package = ttk.Button(
-            self, text="FOCUS", command=lambda: self.focus_target("PACKAGE"))
+            self, text="FOCUS", command=lambda: self.focus_target("PKG"))
         button_package.grid(row=5, column=5, sticky="N")
 
         label_gpu = ttk.Label(
@@ -247,16 +262,18 @@ class GraphPage(tk.Frame):
 
 application = EnergyOracle()
 application.geometry("1280x720")
-animation1 = animation.FuncAnimation(fig, animate_main, interval=1000)
+animation1 = animation.FuncAnimation(fig, animate_main, interval=15000)
 animation2 = animation.FuncAnimation(
-    graph_obj_dict["DRAM"][0], animate, interval=1000, fargs=[graph_obj_dict["DRAM"][1], graph_dict["DRAM"]])
+    graph_obj_dict["DRAM"][0], animate, interval=15000, fargs=[graph_obj_dict["DRAM"][1], graph_dict["DRAM"]])
 animation3 = animation.FuncAnimation(
-    graph_obj_dict["CORE"][0], animate, interval=1000, fargs=[graph_obj_dict["CORE"][1], graph_dict["CORE"]])
+    graph_obj_dict["CORE"][0], animate, interval=15000, fargs=[graph_obj_dict["CORE"][1], graph_dict["CORE"]])
 animation4 = animation.FuncAnimation(
-    graph_obj_dict["PACKAGE"][0], animate, interval=1000, fargs=[graph_obj_dict["PACKAGE"][1], graph_dict["PACKAGE"]])
+    graph_obj_dict["PKG"][0], animate, interval=15000, fargs=[graph_obj_dict["PKG"][1], graph_dict["PKG"]])
 animation5 = animation.FuncAnimation(
-    graph_obj_dict["GPU"][0], animate, interval=1000, fargs=[graph_obj_dict["GPU"][1], graph_dict["GPU"]])
+    graph_obj_dict["GPU"][0], animate, interval=15000, fargs=[graph_obj_dict["GPU"][1], graph_dict["GPU"]])
 animation6 = animation.FuncAnimation(
-    graph_obj_dict["TOTAL"][0], animate, interval=1000, fargs=[graph_obj_dict["TOTAL"][1], graph_dict["TOTAL"]])
+    graph_obj_dict["TOTAL"][0], animate, interval=15000, fargs=[graph_obj_dict["TOTAL"][1], graph_dict["TOTAL"]])
 
 application.mainloop()
+conn.close()
+

@@ -20,22 +20,23 @@ class InfluxConnection:
         params = {"measurement": measurement}
         query = ["SELECT * FROM ", measurement]
         if start:
-            params["start"] = start.strftime("%Y-%m-%d %H-%M-%S")
+            params["start"] = start.strftime("%Y-%m-%d %H:%M:%S")
             query.append(" where time >= $start")
         if stop:
-            params["stop"] = stop.strftime("%Y-%m-%d %H-%M-%S")
+            params["stop"] = stop.strftime("%Y-%m-%d %H:%M:%S")
             if start:
                 query.append(" and ")
             else:
                 query.append(" where ")
             query.append("time <= $stop")
-        return self.client.query("".join(query))
+        print(params)
+        return self.client.query("".join(query), bind_params=params)
 
 def main():
     conn = InfluxConnection('localhost', 8086, 'Energy')
     # for row in conn.get_last_reading('energy').get_points():
     #     print(row)
     # for row in get_last_reading
-    print(conn.get_readings(datetime.datetime.fromtimestamp(1612645058182219610), None, "yay"))
+    print(conn.get_readings(datetime.datetime.fromtimestamp(1612645058), None, "energy"))
         
 main()

@@ -1,3 +1,4 @@
+import os
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 from matplotlib.figure import Figure
 import matplotlib.animation as animation
@@ -196,7 +197,7 @@ class HomePage(tk.Frame):
 
         tc_label = ttk.Label(self, text=terms_string,
                              font=LARGE_FONT, borderwidth=4, padding=5, relief='solid', wraplength=615)
-        tc_label.pack(pady=(125, 0), ipadx=10, ipady=10)
+        tc_label.pack(ipadx=10, ipady=10)
 
         button_agree = ttk.Button(
             self, text="Agree", command=lambda: load_graph_page())
@@ -241,6 +242,8 @@ class GraphPage(tk.Frame):
         tk.Frame.__init__(self, parent)
 
         self.parent = parent
+
+        self.configure(background="white")
 
         self.main_graph()
         self.create_buttons()
@@ -308,6 +311,7 @@ class GraphPage(tk.Frame):
     def start_service(self):
         self.button_start.configure(state="disabled")
         self.button_stop.configure(state="enabled")
+        os.system("cd /home/alejandro/hackbu2021/energyOracle/monitor && ./run.sh")
 
     def stop_service(self):
         self.button_start.configure(state="enabled")

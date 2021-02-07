@@ -13,7 +13,7 @@ class Forecaster:
         self.conn_details['port'] = port
         self.conn_details['db'] = db
         self.conn_details['measurement'] = measurement
-        self.hyperparameters = {"seasonality_prior_scale": 1, "changepoint_prior_scale": 0.1}
+        self.hyperparameters = {"seasonality_prior_scale":0.01 , "changepoint_prior_scale": 0.25}
     
     def setup(self):
         self.train_data = EnergySeries(self.start, self.stop, self.conn_details['host'], self.conn_details['port'], self.conn_details['db'], self.conn_details['measurement']).get_train_data()
@@ -22,11 +22,13 @@ class Forecaster:
         self.train_data = self.train_data.rolling(10).mean()
     
     def train(self):
-        training_set
+        self.training_sets = {}
+        self.models = {}
         for column in {"DRAM", "GPU", "PKG", "CORE"}:
             training_set = pd.DataFrame(self.train_data[column])
             training_set.rename(columns={column: "y"}, inplace=True)
             training_set.reset_index(inplace=True)
+            self.training_sets[column] = training_set
             m = Prophet(**self.hyperparameters)
             m.fit(training_set )
             self.models[column] = m
@@ -51,7 +53,7 @@ def main():
         print(f.train_data.columns)
         print(f.forecasts[col].columns)
 
-        plt.plot(f.train_data[col])
+        plt.plot(f.training_sets[col]['y'])
         plt.plot(f.forecasts[col]['yhat'])
         plt.show()
 

@@ -1,0 +1,6 @@
+set up as a service
+	see if jarring is all good now that its shaded in
+	
+
+sudo disabling script -- it'll die when you exit the gui because its the parent right?
+	pkexec touch /root/foo.txt

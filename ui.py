@@ -11,38 +11,71 @@ matplotlib.use("TKAgg")
 # Tkinter window switching concept from https://www.youtube.com/watch?v=jBUpjijYtCk&list=PLQVvvaa0QuDclKx-QpC9wntnURXVJqLyk&index=4
 
 
-LARGE_FONT = ("Helvetica", 12)
+LARGE_FONT = ("Helvetica", 20)
 MEDIUM_FONT = ("Helvetica", 10)
 SMALL_FONT = ("Helvetica", 8)
 
 style.use("ggplot")
 
-graph_dict = {"DRAM": [[1, 2, 3], [1, 2, 3]],
-              "CORE": [[1, 2, 3], [3, 2, 1]],
-              "PACKAGE": [[1, 2, 3], [6, 8, 1]],
-              "GPU": [[1, 2, 3], [5, 5, 5]],
-              "TOTAL": [[1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-                        [5, 1, 6, 8, 2, 4, 6, 1, 3, 8]]}
+graph_dict = {"DRAM": "dram.txt",
+              "CORE": "core.txt",
+              "PACKAGE": "package.txt",
+              "GPU": "gpu.txt",
+              "TOTAL": "sample.txt"}
 
-fig = Figure(figsize=(10, 6), dpi=100)
+graph_obj_dict = {"DRAM": [],
+                  "CORE": [],
+                  "PACKAGE": [],
+                  "GPU": [],
+                  "TOTAL": []}
+
+for key in graph_dict:
+    f2 = Figure(figsize=(4, 1), dpi=100)
+    f2plot = f2.add_subplot()
+    graph_obj_dict[key].append(f2)
+    graph_obj_dict[key].append(f2plot)
+
+active = graph_dict["TOTAL"]
+
+fig = Figure(figsize=(8, 4), dpi=100)
+plot = fig.add_subplot()
 
 
-def animate(graph):
-    data = open("sample.txt", "r").read()
+def animate(i, graph, path):
+    data = open(path, "r").read()
     dataList = data.split('\n')
     xList = []
     yList = []
     for each in dataList:
-        x, y = each.split(',')
-        xList.append(int(x))
-        yList.append(int(y))
+        if len(each) > 1:
+            x, y = each.split(',')
+            xList.append(int(x))
+            yList.append(int(y))
     graph.clear()
     graph.plot(xList, yList)
+
+
+def animate_main(i):
+    data = open(active, "r").read()
+    dataList = data.split('\n')
+    xList = []
+    yList = []
+    for each in dataList:
+        if len(each) > 1:
+            x, y = each.split(',')
+            xList.append(int(x))
+            yList.append(int(y))
+    plot.clear()
+    plot.plot(xList, yList)
 
 
 class EnergyOracle(tk.Tk):
     def __init__(self):
         tk.Tk.__init__(self)
+
+        s = ttk.Style()
+        print(s.theme_names())
+        s.theme_use("alt")
 
         container = tk.Frame(self)
         container.pack(side="top", fill="both", expand="true")
@@ -62,11 +95,6 @@ class EnergyOracle(tk.Tk):
     def show_frame(self, container):
         frame = self.frame_dict[container]
         frame.tkraise()
-
-    def animate(self, graph):
-        graph.clear()
-        graph.plot([1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-                   [5, 1, 6, 8, 2, 4, 6, 1, 3, 8])
 
     def quit(self):
         self.destroy()
@@ -110,83 +138,87 @@ class GraphPage(tk.Frame):
             self.small_graph(key, i)
             i += 1
 
+        self.focus_target("TOTAL")
+
     # def clear_test(self):
     #     self.focused_graph
 
     def create_buttons(self):
 
-        label_dram = ttk.Label(self, width=15,  text="DRAM usage")
+        label_dram = ttk.Label(
+            self, text="DRAM USAGE", font=LARGE_FONT, background="white")
         label_dram.grid(row=0, column=5, sticky="S")
         button_dram = ttk.Button(
-            self, text="FOCUS", width=15, command=lambda: self.focus_target("DRAM"))
-        button_dram.grid(row=1, column=5, sticky="N")
+            self, text="FOCUS", command=lambda: self.focus_target("DRAM"))
+        button_dram.grid(row=1, column=5, sticky="NE")
 
-        label_core = ttk.Label(self, width=15,  text="CORE usage")
+        label_core = ttk.Label(
+            self,  text="CORE USAGE", font=LARGE_FONT, background="white")
         label_core.grid(row=2, column=5, sticky="S")
         button_core = ttk.Button(
-            self, text="FOCUS", width=15, command=lambda: self.focus_target("CORE"))
+            self, text="FOCUS", command=lambda: self.focus_target("CORE"))
         button_core.grid(row=3, column=5, sticky="N")
 
-        label_package = ttk.Label(self, width=15,  text="PACKAGE usage")
+        label_package = ttk.Label(
+            self,  text="PACKAGE USAGE", font=LARGE_FONT, background="white")
         label_package.grid(row=4, column=5, sticky="S")
         button_package = ttk.Button(
-            self, text="FOCUS", width=15, command=lambda: self.focus_target("PACKAGE"))
+            self, text="FOCUS", command=lambda: self.focus_target("PACKAGE"))
         button_package.grid(row=5, column=5, sticky="N")
 
-        label_gpu = ttk.Label(self, width=15, text="GPU usage")
+        label_gpu = ttk.Label(
+            self, text="GPU USAGE", font=LARGE_FONT, background="white")
         label_gpu.grid(row=6, column=5, sticky="S")
         button_gpu = ttk.Button(
-            self, text="FOCUS", width=15, command=lambda: self.focus_target("GPU"))
-        button_gpu.grid(row=7, column=5, sticky="N")
+            self, text="FOCUS", command=lambda: self.focus_target("GPU"))
+        button_gpu.grid(row=7, column=5, sticky="NE")
 
-        label_total = ttk.Label(self, width=15,  text="TOTAL usage")
+        label_total = ttk.Label(
+            self,  text="TOTAL USAGE", font=LARGE_FONT, background="white")
         label_total.grid(row=8, column=5, sticky="S")
         button_total = ttk.Button(
-            self, text="FOCUS", width=15, command=lambda: self.focus_target("TOTAL"))
+            self, text="FOCUS", command=lambda: self.focus_target("TOTAL"))
         button_total.grid(row=9, column=5, sticky="N")
 
     def main_graph(self):
-        global fig
-        # fig = Figure(figsize=(10, 6), dpi=100)
-        plot = fig.add_subplot()
-        plot.plot(graph_dict["TOTAL"][0], graph_dict["TOTAL"][1])
+        # global fig
         canvas = FigureCanvasTkAgg(fig, self)
-        canvas.get_tk_widget().grid(row=0, column=0, rowspan=10,
-                                    columnspan=4, pady=10, sticky="NSEW")
+        canvas.get_tk_widget().grid(row=1, column=0, rowspan=10,
+                                    columnspan=4, pady=10)
         canvas.draw()
 
         self.focused_graph = canvas
 
     def create_toolbar(self):
         self.toolbarFrame = tk.Frame(self.parent)
-        self.toolbarFrame.grid(row=10, column=0)
+        self.toolbarFrame.grid(row=0, column=0, columnspan=4, sticky="NW")
         self.toolbar = NavigationToolbar2Tk(
             self.focused_graph, self.toolbarFrame)
 
     def small_graph(self, key, row_num):
-        f2 = Figure(figsize=(2, 1), dpi=100)
-        plot = f2.add_subplot()
-        plot.plot(graph_dict[key][0], graph_dict[key][1])
-        canvas = FigureCanvasTkAgg(f2, self)
-        canvas.get_tk_widget().grid(row=row_num * 2, column=6, rowspan=2, columnspan=1, ipadx=10, ipady=50,
-                                    sticky="NS")
+        canvas = FigureCanvasTkAgg(graph_obj_dict[key][0], self)
+        canvas.get_tk_widget().grid(row=row_num * 2, column=6,
+                                    rowspan=2, columnspan=1, ipadx=10, ipady=50)
+        canvas.draw()
 
     def focus_target(self, key):
-        self.focused_graph.get_tk_widget().grid_forget()
 
-        global fig
-        # f = Figure(figsize=(10, 6), dpi=100)
-        plot = fig.add_subplot()
-        plot.plot(graph_dict[key][0], graph_dict[key][1])
-        canvas = FigureCanvasTkAgg(fig, self)
-        canvas.get_tk_widget().grid(row=0, column=0, rowspan=10,
-                                    columnspan=4, pady=10, sticky="NSEW")
-
-        self.toolbar.grid_forget()
-        self.focused_graph = canvas
-        self.create_toolbar()
+        global active
+        active = graph_dict[key]
 
 
 application = EnergyOracle()
-animation = animation.FuncAnimation(fig, animate, interval=1000)
+
+animation1 = animation.FuncAnimation(fig, animate_main, interval=1000)
+animation2 = animation.FuncAnimation(
+    graph_obj_dict["DRAM"][0], animate, interval=1000, fargs=[graph_obj_dict["DRAM"][1], graph_dict["DRAM"]])
+animation3 = animation.FuncAnimation(
+    graph_obj_dict["CORE"][0], animate, interval=1000, fargs=[graph_obj_dict["CORE"][1], graph_dict["CORE"]])
+animation4 = animation.FuncAnimation(
+    graph_obj_dict["PACKAGE"][0], animate, interval=1000, fargs=[graph_obj_dict["PACKAGE"][1], graph_dict["PACKAGE"]])
+animation5 = animation.FuncAnimation(
+    graph_obj_dict["GPU"][0], animate, interval=1000, fargs=[graph_obj_dict["GPU"][1], graph_dict["GPU"]])
+animation6 = animation.FuncAnimation(
+    graph_obj_dict["TOTAL"][0], animate, interval=1000, fargs=[graph_obj_dict["TOTAL"][1], graph_dict["TOTAL"]])
+
 application.mainloop()

@@ -5,7 +5,7 @@
 
 package energyOracle;
 
-import java.util.HashMap;
+//import java.util.HashMap;
 
 import java.time.Instant;
 import java.util.Timer;
@@ -23,7 +23,7 @@ class DbSubmitter extends TimerTask { // is there anywhere that i can do monitor
 
 	// discard the first few readings since they can be unreliable
 	private static long counter = 0;
-	private static final long WARMUP_ITERATIONS = 3; // @TODO MAKE SURE YOU (definitelyinfu) SET THIS BACK TO 3 BEFORE YOU ACTUALLY START ENTERING THE DATA!!
+	private static final long WARMUP_ITERATIONS = 3; // @TODO MAKE SURE YOU (definitely) SET THIS BACK TO 3 BEFORE YOU ACTUALLY START ENTERING THE DATA!!
 	private static final String DB_NAME = "energyDB"; // @TODO MAKE SURE IT'S THE CORRECT NAME BY THE TIME YOU START YOUR LONG TERM ENERGY STORAGE	
 	private SyncEnergyMonitor monitor;
 	private EnergyStats before, after;

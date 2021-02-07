@@ -18,7 +18,7 @@
         <configuration>
           <archive>
             <manifest>
-              <mainClass>energyOracle.Monitor</mainClass>
+              <mainClass>energyOracle.Driver</mainClass>
             </manifest>
           </archive>
         </configuration>
@@ -49,7 +49,7 @@
       <artifactId>jRAPL</artifactId>
       <version>1.0</version>
       <scope>system</scope>
-      <systemPath>${basedir}/src/lib/jRAPL.jar</systemPath>
+      <systemPath>/home/alejandro/jRAPL/target/jRAPL-1.0.jar</systemPath>
     </dependency>
   </dependencies>
 </project>

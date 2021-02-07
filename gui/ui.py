@@ -10,6 +10,18 @@ matplotlib.use("TKAgg")
 
 # Tkinter window switching concept from https://www.youtube.com/watch?v=jBUpjijYtCk&list=PLQVvvaa0QuDclKx-QpC9wntnURXVJqLyk&index=4
 
+terms_string = "The Energy Oracle application monitors component energy use on a per-system\n\
+                basis. Collected data feeds into a machine learning model which predicts\n\
+                future energy usage. The Oracle is intended for use as both a commercial\n\
+                and consumer product. A user could anticipate lulls in computational\n\
+                overhead, and reduce power draw accordingly. This would both lower costs\n\
+                and lower excess energy consumption.\n\n\
+                To accomplish this, The Energy Oracle requires read/write access to the\n\
+                interface of the model-specific-registers. Root privileges are needed\n\
+                for this task, explaining the password prompt.\n\n\
+                The entire Energy Oracle project is open source and available for\n\
+                inspection to ensure full transparency. Your password is never saved by us.\n\
+                (https://github.com/aservet1/energyOracle)"
 
 LARGE_FONT = ("Helvetica", 20)
 MEDIUM_FONT = ("Helvetica", 10)
@@ -30,8 +42,9 @@ graph_obj_dict = {"DRAM": [],
                   "TOTAL": []}
 
 for key in graph_dict:
-    f2 = Figure(figsize=(4, 1), dpi=100)
+    f2 = Figure(figsize=(2.5, 1.25), dpi=100)
     f2plot = f2.add_subplot()
+    f2plot.
     graph_obj_dict[key].append(f2)
     graph_obj_dict[key].append(f2plot)
 
@@ -105,16 +118,16 @@ class HomePage(tk.Frame):
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
 
-        label = ttk.Label(self, text="Terms and Conditions", font=LARGE_FONT)
-        label.pack(pady=15, padx=15)
+        label = ttk.Label(self, text=terms_string, font=MEDIUM_FONT)
+        label.grid(row=0, column=0, columnspan=2)
 
         button_agree = ttk.Button(
             self, text="Agree", command=lambda: load_graph_page())
-        button_agree.pack(pady=15, padx=15)
+        button_agree.grid(row=1, column=1)
 
         button_disagree = ttk.Button(
             self, text="Disagree", command=lambda: controller.quit())
-        button_disagree.pack(pady=15, padx=15)
+        button_disagree.grid(row=1, column=0)
 
         def load_graph_page():
             controller.show_frame(GraphPage)
@@ -150,7 +163,7 @@ class GraphPage(tk.Frame):
         label_dram.grid(row=0, column=5, sticky="S")
         button_dram = ttk.Button(
             self, text="FOCUS", command=lambda: self.focus_target("DRAM"))
-        button_dram.grid(row=1, column=5, sticky="NE")
+        button_dram.grid(row=1, column=5, sticky="N")
 
         label_core = ttk.Label(
             self,  text="CORE USAGE", font=LARGE_FONT, background="white")
@@ -171,7 +184,7 @@ class GraphPage(tk.Frame):
         label_gpu.grid(row=6, column=5, sticky="S")
         button_gpu = ttk.Button(
             self, text="FOCUS", command=lambda: self.focus_target("GPU"))
-        button_gpu.grid(row=7, column=5, sticky="NE")
+        button_gpu.grid(row=7, column=5, sticky="N")
 
         label_total = ttk.Label(
             self,  text="TOTAL USAGE", font=LARGE_FONT, background="white")
@@ -198,7 +211,7 @@ class GraphPage(tk.Frame):
     def small_graph(self, key, row_num):
         canvas = FigureCanvasTkAgg(graph_obj_dict[key][0], self)
         canvas.get_tk_widget().grid(row=row_num * 2, column=6,
-                                    rowspan=2, columnspan=1, ipadx=10, ipady=50)
+                                    rowspan=2, columnspan=1, ipadx=10, ipady=10)
         canvas.draw()
 
     def focus_target(self, key):
@@ -208,7 +221,7 @@ class GraphPage(tk.Frame):
 
 
 application = EnergyOracle()
-
+application.geometry("1280x720")
 animation1 = animation.FuncAnimation(fig, animate_main, interval=1000)
 animation2 = animation.FuncAnimation(
     graph_obj_dict["DRAM"][0], animate, interval=1000, fargs=[graph_obj_dict["DRAM"][1], graph_dict["DRAM"]])

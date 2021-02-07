@@ -49,5 +49,8 @@ class InfluxDBConnection:
                 data_dict["measurement"] = measurement
                 points.append(data_dict)
         self.client.write_points(points)
+    def write_df_to_db(self, df, measurement):
+        data = {}
+        
     def close(self):
         self.client.close()

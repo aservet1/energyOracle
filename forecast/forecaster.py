@@ -19,10 +19,10 @@ class Forecaster:
         self.train_data = EnergySeries(self.start, self.stop, self.conn_details['host'], self.conn_details['port'], self.conn_details['db'], self.conn_details['measurement']).get_train_data()
         self.train_data.pop('socket')
         self.train_data.set_index('ds', inplace=True)
-        self.train_data = self.train_data.rolling(10).mean().dropna()
+        self.train_data = self.train_data.rolling(10).mean()
     
     def train(self):
-        self.models = {}
+        training_set
         for column in {"DRAM", "GPU", "PKG", "CORE"}:
             training_set = pd.DataFrame(self.train_data[column])
             training_set.rename(columns={column: "y"}, inplace=True)

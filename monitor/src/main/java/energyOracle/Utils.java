@@ -14,10 +14,11 @@ public class Utils {
         HashMap<String, HashMap<String,Double>> M = new HashMap<String,HashMap<String,Double>>();
         for (int socket = 1; socket <= ArchSpec.NUM_SOCKETS; socket++) {
             HashMap<String,Double> m = new HashMap<String,Double>();
-            m.put("DRAM", energy.atSocket(1).getDram());
-            m.put("GPU", energy.atSocket(1).getGpu());
-            m.put("CORE", energy.atSocket(1).getCore());
-            m.put("PKG", energy.atSocket(1).getPackage());
+            m.put("DRAM", energy.atSocket(socket).getDram());
+            m.put("GPU", energy.atSocket(socket).getGpu());
+            m.put("CORE", energy.atSocket(socket).getCore());
+            m.put("PKG", energy.atSocket(socket).getPackage());
+            m.put("timestamp", (double)Instant.now().getEpochSecond());
             M.put("Socket"+socket,m);
         }
         // m.put("timestamp", Math.floor((double)Instant.now().getEpochSecond()),);

@@ -1,10 +1,9 @@
-package energyOracle;
-
-
 /*
 	credit due to: https://www.baeldung.com/java-timer-and-timertask
 
 */
+
+package energyOracle;
 
 import java.time.Instant;
 import java.util.Timer;
@@ -12,70 +11,52 @@ import java.util.TimerTask;
 
 import jRAPL.*;
 
-class DbSubmit extends TimerTask {
-	private static SyncEnergyMonitor monitor;
-	private static EnergyStats before, after;
-	static {
+class DbSubmitter extends TimerTask { // is there anywhere that i can do monitor.delloc() in a shutdown() function?
+
+	// discard the first few readings since they can be unreliable
+	private static long counter = 0;
+	private static final long WARMUP_ITERATIONS = 5;
+
+	private SyncEnergyMonitor monitor;
+	private EnergyStats before, after;
+	public DbSubmitter() {
+		super();
+		monitor = new SyncEnergyMonitor();
 		monitor.init();
 		after = monitor.getSample();
+		before = after;
 	}
 	@Override
 	public void run() {
+		if (counter++ >= WARMUP_ITERATIONS) System.out.println(Utils.toHashMap(EnergyDiff.between(before, after)));
+		else System.out.println("warmup iteration "+counter+"/"+WARMUP_ITERATIONS+" completed");
 		before = after;
-		System.out.println(EnergyDiff.between(before, after).dump());
 		after = monitor.getSample();
 	}
 }
 
 public class Monitor
 {
-	private int samplingRate;
-	private final SyncEnergyMonitor monitor;
-	private TimerTask dbSubmitTask;
+	private long samplingRate;
+	DbSubmitter scheduledTask;
 
 	public Monitor() {
-		monitor = new SyncEnergyMonitor();
-		samplingRate = 15000; // default every 15 seconds
+		samplingRate = 15000L; // default every 15 seconds
+		scheduledTask = new DbSubmitter();
 	}
 
-	public void init() {
-		monitor.init();
-	}
-
-	public void dealloc() {
-		monitor.dealloc();
-	}
-
-	private void writeToDB(EnergyDiff sample) {
-
-	}
-
-	private static void waitTill15() { // synchronize operations with every 15th second
-		while (Instant.now().getEpochSecond() % 15 != 0);
+	private static void getOnProperInterval(int s) { // catch up to the next 15th second
+		while (Instant.now().getEpochSecond() % s != 0);
 		System.out.println(Instant.now());
 	}
 
-	public void startMonitoring(int ms) {
-//		// EnergyStats before, after = monitor.getSample();
-//		dbSubmitTask = new TimerTask() {
-//			EnergyStats before, after = monitor.getSample();
-//	
-//			public void run() {
-//				before = after;
-//				System.out.println(EnergyDiff.between(before, after).dump());
-//				after = monitor.getSample();
-//			}
-//		};
-
-		//DbSubmit dbSumbitTask = new DbSubmit();
-
-		System.out.println(monitor.getSample().dump());
+	public void startMonitoring() {
 
 		Timer timer = new Timer("Timer");
 
-		long delay = 1000L;
-		long period = 1000L * 60L * 60L * 24L;
-		timer.scheduleAtFixedRate(new DbSubmit(), delay, period);
+		getOnProperInterval(15);
+		long period = samplingRate;// 1000L * 60L * 60L * 24L;
+		timer.scheduleAtFixedRate(scheduledTask, 0, period);
 	}
 
 	public void abortMonitoring() {
@@ -84,10 +65,7 @@ public class Monitor
 
 	public static void main(String[] args) throws InterruptedException
 	{
-		//for(int x = 0; x < 2; x++) { waitTill15(); Thread.sleep(1000); }
 		Monitor m = new Monitor();
-		m.init();
-		m.startMonitoring(10000);
-		m.dealloc();
+		m.startMonitoring();
 	}
 }

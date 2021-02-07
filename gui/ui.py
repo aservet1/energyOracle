@@ -128,11 +128,11 @@ class HomePage(tk.Frame):
 
         button_agree = ttk.Button(
             self, text="Agree", command=lambda: load_graph_page())
-        button_agree.grid(row=1, column=1)
+        button_agree.grid(row=1, column=1, sticky="W")
 
         button_disagree = ttk.Button(
             self, text="Disagree", command=lambda: controller.quit())
-        button_disagree.grid(row=1, column=0)
+        button_disagree.grid(row=1, column=0, sticky="E")
 
         def load_graph_page():
             controller.show_frame(GraphPage)
@@ -166,6 +166,13 @@ class GraphPage(tk.Frame):
         self.label_display = ttk.Label(
             self, font=LARGE_FONT, background="white")
         self.label_display.grid(row=0, column=0, sticky="S")
+
+        self.button_start = ttk.Button(
+            self, text="START SERVICE", state="enabled", command=lambda: self.start_service())
+        self.button_stop = ttk.Button(
+            self, text=" STOP SERVICE ", state="disabled", command=lambda: self.stop_service())
+        self.button_start.grid(row=9, column=0, sticky="SW", padx=(100, 0))
+        self.button_stop.grid(row=10, column=0, sticky="NW", padx=(100, 0))
 
         label_dram = ttk.Label(
             self, text="DRAM USAGE", font=LARGE_FONT, background="white")
@@ -202,6 +209,14 @@ class GraphPage(tk.Frame):
             self, text="FOCUS", command=lambda: self.focus_target("TOTAL"))
         button_total.grid(row=9, column=5, sticky="N")
 
+    def start_service(self):
+        self.button_start.configure(state="disabled")
+        self.button_stop.configure(state="enabled")
+
+    def stop_service(self):
+        self.button_start.configure(state="enabled")
+        self.button_stop.configure(state="disabled")
+
     def main_graph(self):
         # global fig
         canvas = FigureCanvasTkAgg(fig, self)
@@ -220,7 +235,7 @@ class GraphPage(tk.Frame):
     def small_graph(self, key, row_num):
         canvas = FigureCanvasTkAgg(graph_obj_dict[key][0], self)
         canvas.get_tk_widget().grid(row=row_num * 2, column=6,
-                                    rowspan=2, columnspan=1)
+                                    rowspan=2, columnspan=1, sticky="NS")
         canvas.draw()
 
     def focus_target(self, key):
